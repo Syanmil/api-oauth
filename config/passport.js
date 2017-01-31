@@ -27,25 +27,16 @@ module.exports = function(passport) {
   // make the code asynchronous
   // User.findOne won't fire until we have all our data back from Twitter
     process.nextTick(function() {
-      console.log(User);
-      User.find({ where: {twitterid : profile.id} }, function(err, user) {
-          // if there is an error, stop everything and return that
-          // ie an error connecting to the database
-          if (err)
-            return done(err);
-          // if the user is found then log them in
-          if (user) {
-            return done(null, user); // user found, return that user
-          } else {
-            // if there is no user, create them
-            User.create({
-              twitterid   : profile.id,
-              token       : token,
-              username    : profile.username,
-              displayName : profile.displayName
-            })
-          }
-      });
+      User.findOrCreate({where: {twitterid: profile.id}, defaults: {
+        token       : token,
+        username    : profile.username,
+        displayName : profile.displayName
+      }})
+      .spread(function(user, created) {
+        user.get({
+          plain: true
+        })
+      })
     });
   }));
 };
